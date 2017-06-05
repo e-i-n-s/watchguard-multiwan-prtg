@@ -59,7 +59,11 @@ xmlList = interfaces.get('interface_list');
 
 # Parse XML
 list = ET.fromstring(xmlList)
+if list.getchildren()[0].tag == 'cluster':
+    list = list.find('cluster').find('aggregate')
 list_interfaces = list.find('network').find('interface_list')
+list_interfaces = list.find('network').find('interface_list')
+
 
 count_external_interfaces = 0
 failed_interfaces = []
