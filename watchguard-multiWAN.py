@@ -80,6 +80,6 @@ if len(failed_interfaces) is 0:
     status = 0
 
 sensor = CustomSensorResult(message) 
-sensor.add_channel(channel_name="Status",unit="Count",value=status,is_limit_mode=True,limit_max_error=0,limit_error_msg="At least one WAN is not available!", primary_channel=True)
-sensor.add_channel(channel_name="Failed",unit="Count",value=len(failed_interfaces),is_limit_mode=True,limit_max_error=0)
+sensor.add_channel(channel_name="Status",unit="Count",value=status,is_limit_mode=True,limit_max_error=0.5,limit_error_msg="At least one WAN is not available!", primary_channel=True)
+sensor.add_channel(channel_name="Number of failed interfaces",unit="Count",value=len(failed_interfaces),is_limit_mode=True,limit_max_error=0.5)
 print(sensor.get_json_result())
