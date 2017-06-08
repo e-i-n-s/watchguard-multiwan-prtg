@@ -22,9 +22,6 @@ user = parameters.get('linuxloginusername')
 password = parameters.get('linuxloginpassword') 
 baseURL = 'https://' + host + ':8080'
 
-def etree_to_dict(t):
-    return {t.tag : map(etree_to_dict, t.iterchildren()) or t.text}
-
 url = baseURL + '/agent/login'
 data = '<methodCall><methodName>login</methodName><params><param><value><struct><member><name>password</name><value><string>' + password +'</string></value></member><member><name>user</name><value><string>' + user + '</string></value></member><member><name>domain</name><value><string>Firebox-DB</string></value></member><member><name>uitype</name><value><string>2</string></value></member></struct></value></param></params></methodCall>'
 
@@ -48,7 +45,6 @@ data = urllib.parse.urlencode(values)
 req = urllib.request.Request(url=url,data=data.encode('utf-8'))
 response = opener.open(req)
 
-
 url = baseURL + '/dashboard/dboard_get_interfaces?id=undefined'
 req = urllib.request.Request(url)
 response = opener.open(req)
@@ -63,7 +59,6 @@ if list.getchildren()[0].tag == 'cluster':
     list = list.find('cluster').find('aggregate')
 list_interfaces = list.find('network').find('interface_list')
 list_interfaces = list.find('network').find('interface_list')
-
 
 count_external_interfaces = 0
 failed_interfaces = []
