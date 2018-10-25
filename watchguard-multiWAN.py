@@ -14,16 +14,17 @@ context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
 cookiejar = http.cookiejar.CookieJar()
 cookiejar.clear_session_cookies()
-opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookiejar),urllib.request.HTTPSHandler(context=context))
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookiejar),
+                                     urllib.request.HTTPSHandler(context=context))
 
 parameters = json.loads(args.prtg);
 host = parameters.get('host')
-user = parameters.get('linuxloginusername') 
-password = parameters.get('linuxloginpassword') 
+user = parameters.get('linuxloginusername')
+password = parameters.get('linuxloginpassword')
 baseURL = 'https://' + host + ':8080'
 
 url = baseURL + '/agent/login'
-data = '<methodCall><methodName>login</methodName><params><param><value><struct><member><name>password</name><value><string>' + password +'</string></value></member><member><name>user</name><value><string>' + user + '</string></value></member><member><name>domain</name><value><string>Firebox-DB</string></value></member><member><name>uitype</name><value><string>2</string></value></member></struct></value></param></params></methodCall>'
+data = '<methodCall><methodName>login</methodName><params><param><value><struct><member><name>password</name><value><string>' + password + '</string></value></member><member><name>user</name><value><string>' + user + '</string></value></member><member><name>domain</name><value><string>Firebox-DB</string></value></member><member><name>uitype</name><value><string>2</string></value></member></struct></value></param></params></methodCall>'
 
 req = urllib.request.Request(url, data.encode('utf-8'))
 response = opener.open(req)
@@ -36,13 +37,13 @@ csrfToken = root[0][0][0][0][1][1].text
 url = baseURL + '/auth/login'
 values = [('username', user),
           ('password', password),
-          ('domain','Firebox-DB'),
-          ('sid',sid),
-          ('privilege',1),
-          ('from_page','/')]
+          ('domain', 'Firebox-DB'),
+          ('sid', sid),
+          ('privilege', 1),
+          ('from_page', '/')]
 
 data = urllib.parse.urlencode(values)
-req = urllib.request.Request(url=url,data=data.encode('utf-8'))
+req = urllib.request.Request(url=url, data=data.encode('utf-8'))
 response = opener.open(req)
 
 url = baseURL + '/dashboard/dboard_get_interfaces?id=undefined'
@@ -74,7 +75,9 @@ if len(failed_interfaces) is 0:
     message = 'OK'
     status = 0
 
-sensor = CustomSensorResult(message) 
-sensor.add_channel(channel_name="Status",unit="Count",value=status,is_limit_mode=True,limit_max_error=0.5,limit_error_msg="At least one WAN is not available!", primary_channel=True)
-sensor.add_channel(channel_name="Number of failed interfaces",unit="Count",value=len(failed_interfaces),is_limit_mode=True,limit_max_error=0.5)
+sensor = CustomSensorResult(message)
+sensor.add_channel(channel_name="Status", unit="Count", value=status, is_limit_mode=True, limit_max_error=0.5,
+                   limit_error_msg="At least one WAN is not available!", primary_channel=True)
+sensor.add_channel(channel_name="Number of failed interfaces", unit="Count", value=len(failed_interfaces),
+                   is_limit_mode=True, limit_max_error=0.5)
 print(sensor.get_json_result())
