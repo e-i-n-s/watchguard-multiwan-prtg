@@ -17,7 +17,7 @@ cookiejar.clear_session_cookies()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookiejar),
                                      urllib.request.HTTPSHandler(context=context))
 
-parameters = json.loads(args.prtg);
+parameters = json.loads(args.prtg)
 host = parameters.get('host')
 user = parameters.get('linuxloginusername')
 password = parameters.get('linuxloginpassword')
@@ -51,8 +51,8 @@ req = urllib.request.Request(url)
 response = opener.open(req)
 
 # Parse JSON
-interfaces = json.loads(response.read().decode('utf8'));
-xmlList = interfaces.get('interface_list');
+interfaces = json.loads(response.read().decode('utf8'))
+xmlList = interfaces.get('interface_list')
 
 # Parse XML
 list = ET.fromstring(xmlList)
@@ -69,7 +69,7 @@ for interface in list_interfaces.getchildren():
         if interface.find('wan_target_status').text == '0':
             failed_interfaces.append(interface.find('ifalias').text)
 
-message = 'WAN Status: Error';
+message = 'WAN Status: Error'
 status = 2
 if len(failed_interfaces) is 0:
     message = 'OK'
