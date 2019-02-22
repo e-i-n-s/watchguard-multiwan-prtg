@@ -1,7 +1,10 @@
 # Watchguard MultiWAN with PRTG
 
+**No support for SD-WAN**
+
+
 ## Requirements
-- WatchGuard (tested with Firmware >= 11.12.0, non-cluster or cluster) 
+- WatchGuard (tested with Firmware 11.12.0, non-cluster or cluster) 
 - A 'Device Monitor' User (you can use the status user or add a new user)
 - PRTG (tested with version 17)
 
