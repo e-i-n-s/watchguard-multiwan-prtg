@@ -1,11 +1,14 @@
 import urllib
 import http.cookiejar
+import sys
 import ssl
 import xml.etree.ElementTree as ET
 import json
 import argparse
-from paepy.ChannelDefinition import CustomSensorResult
+from paesslerag_prtg_sensor_api.sensor.result import CustomSensorResult
 
+# Prepare data and web session
+data = json.loads(sys.argv[1])
 parser = argparse.ArgumentParser()
 parser.add_argument("prtg", help="PRTG String")
 args = parser.parse_args()
@@ -16,68 +19,57 @@ cookiejar = http.cookiejar.CookieJar()
 cookiejar.clear_session_cookies()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookiejar),
                                      urllib.request.HTTPSHandler(context=context))
-
+# Firewall connection
 parameters = json.loads(args.prtg)
 host = parameters.get('host')
 user = parameters.get('linuxloginusername')
 password = parameters.get('linuxloginpassword')
 baseURL = 'https://' + host + ':8080'
 
-url = baseURL + '/agent/login'
-data = '<methodCall><methodName>login</methodName><params><param><value><struct><member><name>password</name><value><string>' + password + '</string></value></member><member><name>user</name><value><string>' + user + '</string></value></member><member><name>domain</name><value><string>Firebox-DB</string></value></member><member><name>uitype</name><value><string>2</string></value></member></struct></value></param></params></methodCall>'
-
-req = urllib.request.Request(url, data.encode('utf-8'))
-response = opener.open(req)
-xmlUserInformation = response.read()
-
-root = ET.fromstring(xmlUserInformation)
-sid = root[0][0][0][0][0][1].text
-csrfToken = root[0][0][0][0][1][1].text
-
-url = baseURL + '/auth/login'
-values = [('username', user),
-          ('password', password),
-          ('domain', 'Firebox-DB'),
-          ('sid', sid),
-          ('privilege', 1),
-          ('from_page', '/')]
-
-data = urllib.parse.urlencode(values)
-req = urllib.request.Request(url=url, data=data.encode('utf-8'))
+url = baseURL + '/auth/login/' + user + '/' + password
+req = urllib.request.Request(url=url)
 response = opener.open(req)
 
 url = baseURL + '/dashboard/dboard_get_interfaces?id=undefined'
 req = urllib.request.Request(url)
 response = opener.open(req)
 
-# Parse JSON
+# JSON Response
 interfaces = json.loads(response.read().decode('utf8'))
 xmlList = interfaces.get('interface_list')
 
-# Parse XML
+# XML
 list = ET.fromstring(xmlList)
-if list.getchildren()[0].tag == 'cluster':
+if list[0].tag == 'cluster':
     list = list.find('cluster').find('aggregate')
-list_interfaces = list.find('network').find('interface_list')
 list_interfaces = list.find('network').find('interface_list')
 
 count_external_interfaces = 0
 failed_interfaces = []
-for interface in list_interfaces.getchildren():
+
+# Browse interfaces to check their status
+for interface in list_interfaces:
     if interface.find('enabled').text == '1' and interface.find('zone').text == 'External':
         count_external_interfaces += 1
         if interface.find('wan_target_status').text == '0':
             failed_interfaces.append(interface.find('ifalias').text)
 
-message = 'WAN Status: Error'
-status = 2
-if len(failed_interfaces) is 0:
-    message = 'OK'
-    status = 0
+# Concatenate interface names
+failed_interfaces_str = ', '.join(failed_interfaces) if failed_interfaces else 'None'
 
-sensor = CustomSensorResult(message)
-sensor.add_channel(channel_name="Status", unit="Count", value=status, is_limit_mode=True, limit_max_error=0.5,
-                   limit_error_msg="At least one WAN is not available!", primary_channel=True)
-sensor.add_channel(channel_name="Number of failed interfaces", unit="Count", value=len(failed_interfaces),
-                   is_limit_mode=True, limit_max_error=0.5)
-print(sensor.get_json_result())
+# Adjusting messages and status
+if len(failed_interfaces) == 0:
+	message = 'OK'
+else:
+	message = 'Failed WAN : ' + failed_interfaces_str
+
+# Sensor creation
+csr = CustomSensorResult(text=message)
+csr.add_primary_channel(name="Status",
+						unit="WAN Failed",
+						value=len(failed_interfaces),
+						is_limit_mode=True,
+						limit_max_error=0.5)
+
+# Print result in JSON format for PRTG
+print(csr.json_result)
