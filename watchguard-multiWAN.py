@@ -8,7 +8,7 @@ import argparse
 from paesslerag_prtg_sensor_api.sensor.result import CustomSensorResult
 from urllib.parse import quote
 
-# Préparation session web
+# Prepare data and web session
 data = json.loads(sys.argv[1])
 parser = argparse.ArgumentParser()
 parser.add_argument("prtg", help="PRTG String")
@@ -20,7 +20,7 @@ cookiejar = http.cookiejar.CookieJar()
 cookiejar.clear_session_cookies()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookiejar),
                                      urllib.request.HTTPSHandler(context=context))
-# Connexion au firewall WG
+# Firewall connection
 parameters = json.loads(args.prtg)
 host = parameters.get('host')
 user = parameters.get('linuxloginusername')
@@ -36,11 +36,11 @@ url = baseURL + '/dashboard/dboard_get_interfaces?id=undefined'
 req = urllib.request.Request(url)
 response = opener.open(req)
 
-# Analyse de la réponse JSON
+# JSON Response
 interfaces = json.loads(response.read().decode('utf8'))
 xmlList = interfaces.get('interface_list')
 
-# Analyse du XML
+# XML
 list = ET.fromstring(xmlList)
 if list[0].tag == 'cluster':
     list = list.find('cluster').find('aggregate')
@@ -49,23 +49,23 @@ list_interfaces = list.find('network').find('interface_list')
 count_external_interfaces = 0
 failed_interfaces = []
 
-# Parcours des interfaces pour vérifier leur état
+# Browse interfaces to check their status
 for interface in list_interfaces:
     if interface.find('enabled').text == '1' and interface.find('zone').text == 'External':
         count_external_interfaces += 1
         if interface.find('wan_target_status').text == '0':
             failed_interfaces.append(interface.find('ifalias').text)
 
-# Concaténer les noms des interfaces en défaut
+# Concatenate interface names
 failed_interfaces_str = ', '.join(failed_interfaces) if failed_interfaces else 'Aucune'
 
-# Ajustement des messages et du statut
+# Adjusting messages and status
 if len(failed_interfaces) == 0:
 	message = 'OK'
 else:
 	message = 'Failed WAN : ' + failed_interfaces_str
 
-# Création du capteur
+# Sensor creation
 csr = CustomSensorResult(text=message)
 csr.add_primary_channel(name="Status",
 						unit="WAN Failed",
@@ -73,5 +73,5 @@ csr.add_primary_channel(name="Status",
 						is_limit_mode=True,
 						limit_max_error=0.5)
 
-# Impression du résultat en format JSON pour PRTG
+# Print result in JSON format for PRTG
 print(csr.json_result)
